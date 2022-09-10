@@ -6,6 +6,7 @@ export class ErrorCodes {
 export class General {
     public static DbconnectionError: string = "DB server connection error";
     public static SqlQueryError: string = "Incorrect query";
+    public static HttpQueryError: string = "Misdirected Request";
 }
 
 export const DB_CONNECTION_STRING: string = "server=.;Database=X5RetailGroup;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";

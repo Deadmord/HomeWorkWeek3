@@ -2,6 +2,7 @@ import { Connection, SqlClient, Error } from "msnodesqlv8";
 import { product, store } from "../entities";
 import { ErrorCodes, General, DB_CONNECTION_STRING, Queries } from "../constants";
 import { ErrorHelper } from "../helpers/error.helper";
+import { QueryHelper } from "../helpers/query.helper";
 
 interface localStore {
     id: number;
@@ -19,6 +20,7 @@ interface localProduct {
 interface IRetailStoreService {
     getStores(): Promise<store[]>;
     getStore(id: number): Promise<store>;
+    getUpdateStore(parametrTitle: string, parametrValue: string, id: number): Promise<string>;
 }
 interface IRetailService {
     getProducts(): Promise<product[]>;
@@ -87,6 +89,37 @@ export class RetailStoreService implements IRetailStoreService {
                                 //TO DO: Not Found 
                             }
                             resolve(result);
+                        }
+                    })
+                }
+            });
+        });
+    }
+
+    public getUpdateStore(parametrTitle: string, parametrValue: string, id: number): Promise<string> {
+        let result: string;
+        return new Promise<string>((resolve, reject) => {
+
+            const sql: SqlClient = require("msnodesqlv8");
+
+            const connectionString: string = DB_CONNECTION_STRING;
+            const query: string = QueryHelper.updateData('store', parametrTitle, parametrValue, id);
+
+            sql.open(connectionString, (connectionError: Error, connection: Connection) => {
+                if (connectionError) {
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                }
+                else {
+                    connection.query(`${query}`, (queryError: Error | undefined, queryResult: string[] | undefined) => {
+                        if (queryError) {
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                        }
+                        else {
+                            
+                            if (queryResult !== undefined) {
+                                result = queryResult[0];
+                            }
+                            resolve('Update successful!');
                         }
                     })
                 }
