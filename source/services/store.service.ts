@@ -1,7 +1,14 @@
 import { Connection, SqlClient, Error } from "msnodesqlv8";
-import { product } from "../entities";
+import { product, store } from "../entities";
 import { ErrorCodes, General, DB_CONNECTION_STRING, Queries } from "../constants";
 import { ErrorHelper } from "../helpers/error.helper";
+
+interface localStore {
+    id: number;
+    title: string;
+    address: string;
+    manager_id: number;
+}
 
 interface localProduct {
     id: number;
@@ -9,13 +16,95 @@ interface localProduct {
     categories: string;
 }
 
-interface ISchoolService {
-    getBoardTypes(): Promise<product[]>;
-    getBoardType(id: number): Promise<product>;
+interface IRetailStoreService {
+    getStores(): Promise<store[]>;
+    getStore(id: number): Promise<store>;
+}
+interface IRetailService {
+    getProducts(): Promise<product[]>;
+    getProduct(id: number): Promise<product>;
 }
 
-export class SchoolService implements ISchoolService {
-    public getBoardTypes(): Promise<product[]> {
+export class RetailStoreService implements IRetailStoreService {
+    public getStores(): Promise<store[]> {
+        return new Promise<store[]>((resolve , reject) => {
+            const result: store[] = [];
+            const sql: SqlClient = require("msnodesqlv8");
+    
+            const connectionString: string = DB_CONNECTION_STRING;
+            const query: string = Queries.Store;
+    
+            sql.open(connectionString,  (connectionError: Error, connection: Connection) => {
+                //If server doesnt work
+                if(connectionError) {
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                }
+                else {
+                    connection.query(query, (queryError: Error | undefined, queryResult: localStore[] | undefined) => {  
+                        if (queryError) {
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                        }
+                        else {
+                            const result: store[] = [];
+                            if (queryResult !== undefined) {
+                                queryResult.forEach(store => {
+                                    result.push(
+                                        this.parseLocalStore(store)
+                                    )
+                                });
+                            }
+                            resolve(result);
+                        }
+                    })
+                }
+            });
+        });
+    }
+
+    public getStore(id: number): Promise<store> {
+        let result: store;
+        return new Promise<store>((resolve, reject) => {
+
+            const sql: SqlClient = require("msnodesqlv8");
+
+            const connectionString: string = DB_CONNECTION_STRING;
+            const query: string = Queries.StoreById;
+
+            sql.open(connectionString, (connectionError: Error, connection: Connection) => {
+                if (connectionError) {
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                }
+                else {
+                    connection.query(`${query} ${id}`, (queryError: Error | undefined, queryResult: localStore[] | undefined) => {
+                        if (queryError) {
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                        }
+                        else {
+                            if (queryResult !== undefined && queryResult.length === 1) {
+                                result = this.parseLocalStore(queryResult[0])
+                            }
+                            else if (queryResult !== undefined && queryResult.length === 0) {
+                                //TO DO: Not Found 
+                            }
+                            resolve(result);
+                        }
+                    })
+                }
+            });
+        });
+    }
+
+    private parseLocalStore(local: localStore): store {
+        return {
+            id: local.id,
+            store_title: local.title,
+            store_address: local.address,
+            manager_id: local.manager_id
+        };
+    }
+}
+export class RetailService implements IRetailService {
+    public getProducts(): Promise<product[]> {
         return new Promise<product[]>((resolve , reject) => {
             const result: product[] = [];
             const sql: SqlClient = require("msnodesqlv8");
@@ -50,7 +139,7 @@ export class SchoolService implements ISchoolService {
         });
     }
 
-    public getBoardType(id: number): Promise<product> {
+    public getProduct(id: number): Promise<product> {
         let result: product;
         return new Promise<product>((resolve, reject) => {
 

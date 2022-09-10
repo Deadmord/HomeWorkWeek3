@@ -2,7 +2,10 @@ import express from 'express';
 import controller from '../controllers/store.controller';
 const router = express.Router();
 
-router.get('/general/board-types', controller.getBoardTypes);
-router.get('/general/board-type/:id', controller.getBoardType);
+router.get('/general/stores', controller.getStores);
+router.get('/general/store/:id', controller.getStore);
+
+router.get('/general/products', controller.getProducts);
+router.get('/general/product/:id', controller.getProduct);
 
 export default { router }
