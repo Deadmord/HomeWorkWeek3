@@ -3,7 +3,7 @@ export class ErrorCodes {
     public static queryError: number = 101;
 }
 
-export class General {
+export class ErrorMessages {
     public static DbconnectionError: string = "DB server connection error";
     public static SqlQueryError: string = "Incorrect query";
     public static HttpQueryError: string = "Misdirected Request";

@@ -1,8 +1,10 @@
 import { Connection, SqlClient, Error } from "msnodesqlv8";
-import { product, store } from "../entities";
-import { ErrorCodes, General, DB_CONNECTION_STRING, Queries } from "../constants";
+import { product, store, systemError } from "../entities";
+import { ErrorCodes, ErrorMessages, DB_CONNECTION_STRING, Queries } from "../constants";
 import { ErrorHelper } from "../helpers/error.helper";
 import { QueryHelper } from "../helpers/query.helper";
+import { SqlHelper } from "../helpers/sql.helper";
+import { connect } from "mssql";
 
 interface localStore {
     id: number;
@@ -39,12 +41,12 @@ export class RetailStoreService implements IRetailStoreService {
             sql.open(connectionString,  (connectionError: Error, connection: Connection) => {
                 //If server doesnt work
                 if(connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
                 }
                 else {
                     connection.query(query, (queryError: Error | undefined, queryResult: localStore[] | undefined) => {  
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
                         else {
                             const result: store[] = [];
@@ -74,12 +76,12 @@ export class RetailStoreService implements IRetailStoreService {
 
             sql.open(connectionString, (connectionError: Error, connection: Connection) => {
                 if (connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
                 }
                 else {
                     connection.query(`${query} ${id}`, (queryError: Error | undefined, queryResult: localStore[] | undefined) => {
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
                         else {
                             if (queryResult !== undefined && queryResult.length === 1) {
@@ -107,12 +109,12 @@ export class RetailStoreService implements IRetailStoreService {
 
             sql.open(connectionString, (connectionError: Error, connection: Connection) => {
                 if (connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
                 }
                 else {
                     connection.query(`${query}`, (queryError: Error | undefined, queryResult: string[] | undefined) => {
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
                         else {
                             
@@ -148,12 +150,12 @@ export class RetailService implements IRetailService {
             sql.open(connectionString,  (connectionError: Error, connection: Connection) => {
                 //If server doesnt work
                 if(connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
+                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
                 }
                 else {
                     connection.query(query, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {  
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
                         else {
                             const result: product[] = [];
@@ -173,35 +175,31 @@ export class RetailService implements IRetailService {
     }
 
     public getProduct(id: number): Promise<product> {
-        let result: product;
         return new Promise<product>((resolve, reject) => {
+            let result: product;
 
-            const sql: SqlClient = require("msnodesqlv8");
-
-            const connectionString: string = DB_CONNECTION_STRING;
             const query: string = Queries.ProductById;
 
-            sql.open(connectionString, (connectionError: Error, connection: Connection) => {
-                if (connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, General.DbconnectionError));
-                }
-                else {
+            SqlHelper.OpenConnection()
+                .then((connection: Connection) => {
                     connection.query(`${query} ${id}`, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, General.SqlQueryError));
+                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
                         else {
                             if (queryResult !== undefined && queryResult.length === 1) {
                                 result = this.parseLocalProduct(queryResult[0])
-                            }
+                             }
                             else if (queryResult !== undefined && queryResult.length === 0) {
-                                //TO DO: Not Found 
+                                //TODO: Not Found 
                             }
                             resolve(result);
                         }
                     })
-                }
-            });
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
         });
     }
 

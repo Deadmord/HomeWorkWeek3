@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ErrorCodes, General } from '../constants';
+import { ErrorCodes, ErrorMessages } from '../constants';
 import { systemError, store, product } from '../entities';
 import { RetailService, RetailStoreService } from '../services/store.service';
 
@@ -137,7 +137,7 @@ const getUpdateStore = async (req: Request, res: Response, next: NextFunction) =
     }
     else {
         return res.status(421).json({
-            errorMessage: General.HttpQueryError
+            errorMessage: ErrorMessages.HttpQueryError
         });
     }
 };
