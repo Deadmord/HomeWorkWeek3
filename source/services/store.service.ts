@@ -33,35 +33,25 @@ export class RetailStoreService implements IRetailStoreService {
     public getStores(): Promise<store[]> {
         return new Promise<store[]>((resolve , reject) => {
             const result: store[] = [];
-            const sql: SqlClient = require("msnodesqlv8");
-    
-            const connectionString: string = DB_CONNECTION_STRING;
-            const query: string = Queries.Store;
-    
-            sql.open(connectionString,  (connectionError: Error, connection: Connection) => {
-                //If server doesnt work
-                if(connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
-                }
-                else {
-                    connection.query(query, (queryError: Error | undefined, queryResult: localStore[] | undefined) => {  
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
-                        }
-                        else {
-                            const result: store[] = [];
-                            if (queryResult !== undefined) {
-                                queryResult.forEach(store => {
-                                    result.push(
-                                        this.parseLocalStore(store)
-                                    )
-                                });
-                            }
+
+            SqlHelper.openConnection()
+                .then((connection: Connection) => {
+                    SqlHelper.executeQueryArrayResult<localStore>(connection, Queries.Store)
+                        .then((queryResult: localStore[]) => {
+                            queryResult.forEach((store: localStore) => {
+                                result.push(this.parseLocalStore(store));
+                            });
+                        
                             resolve(result);
-                        }
-                    })
-                }
-            });
+                        })
+                        .catch((error: systemError) => {
+                            reject(error);
+                        });
+                                
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
         });
     }
 
@@ -69,32 +59,19 @@ export class RetailStoreService implements IRetailStoreService {
         let result: store;
         return new Promise<store>((resolve, reject) => {
 
-            const sql: SqlClient = require("msnodesqlv8");
-
-            const connectionString: string = DB_CONNECTION_STRING;
-            const query: string = Queries.StoreById;
-
-            sql.open(connectionString, (connectionError: Error, connection: Connection) => {
-                if (connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
-                }
-                else {
-                    connection.query(`${query} ${id}`, (queryError: Error | undefined, queryResult: localStore[] | undefined) => {
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
-                        }
-                        else {
-                            if (queryResult !== undefined && queryResult.length === 1) {
-                                result = this.parseLocalStore(queryResult[0])
-                            }
-                            else if (queryResult !== undefined && queryResult.length === 0) {
-                                //TO DO: Not Found 
-                            }
-                            resolve(result);
-                        }
-                    })
-                }
-            });
+            SqlHelper.openConnection()
+                .then((connection: Connection) => {
+                    SqlHelper.executeQuerySingleResult<localStore>(connection, `${Queries.StoreById} ${id}`)
+                        .then((queryResult: localStore) => {
+                            resolve(this.parseLocalStore(queryResult))
+                        })
+                        .catch((error: systemError) => {
+                            reject(error)
+                        });
+                })
+                .catch((error: systemError) => {
+                    reject(error)
+                });
         });
     }
 
@@ -142,25 +119,16 @@ export class RetailService implements IRetailService {
     public getProducts(): Promise<product[]> {
         return new Promise<product[]>((resolve , reject) => {
             const result: product[] = [];
-            const sql: SqlClient = require("msnodesqlv8");
-    
-            const connectionString: string = DB_CONNECTION_STRING;
-            const query: string = Queries.Product;
-    
-            sql.open(connectionString,  (connectionError: Error, connection: Connection) => {
-                //If server doesnt work
-                if(connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
-                }
-                else {
-                    connection.query(query, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {  
+
+            SqlHelper.openConnection()
+                .then((connection: Connection) => {
+                    connection.query(Queries.Product, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {  
                         if (queryError) {
                             reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
                         else {
-                            const result: product[] = [];
                             if (queryResult !== undefined) {
-                                queryResult.forEach(product => {
+                                queryResult.forEach((product: localProduct ) => {
                                     result.push(
                                         this.parseLocalProduct(product)
                                     )
@@ -169,8 +137,11 @@ export class RetailService implements IRetailService {
                             resolve(result);
                         }
                     })
-                }
-            });
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+
         });
     }
 
@@ -178,11 +149,9 @@ export class RetailService implements IRetailService {
         return new Promise<product>((resolve, reject) => {
             let result: product;
 
-            const query: string = Queries.ProductById;
-
-            SqlHelper.OpenConnection()
+            SqlHelper.openConnection()
                 .then((connection: Connection) => {
-                    connection.query(`${query} ${id}`, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {
+                    connection.query(`${Queries.ProductById} ${id}`, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {
                         if (queryError) {
                             reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
                         }
