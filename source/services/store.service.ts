@@ -36,18 +36,14 @@ export class RetailStoreService implements IRetailStoreService {
 
             SqlHelper.openConnection()
                 .then((connection: Connection) => {
-                    SqlHelper.executeQueryArrayResult<localStore>(connection, Queries.Store)
-                        .then((queryResult: localStore[]) => {
-                            queryResult.forEach((store: localStore) => {
-                                result.push(this.parseLocalStore(store));
-                            });
-                        
-                            resolve(result);
-                        })
-                        .catch((error: systemError) => {
-                            reject(error);
-                        });
-                                
+                    return SqlHelper.executeQueryArrayResult<localStore>(connection, Queries.Store);            
+                })
+                .then((queryResult: localStore[]) => {
+                    queryResult.forEach((store: localStore) => {
+                        result.push(this.parseLocalStore(store));
+                    });
+                
+                    resolve(result);
                 })
                 .catch((error: systemError) => {
                     reject(error);
@@ -61,13 +57,10 @@ export class RetailStoreService implements IRetailStoreService {
 
             SqlHelper.openConnection()
                 .then((connection: Connection) => {
-                    SqlHelper.executeQuerySingleResult<localStore>(connection, `${Queries.StoreById} ${id}`)
-                        .then((queryResult: localStore) => {
-                            resolve(this.parseLocalStore(queryResult))
-                        })
-                        .catch((error: systemError) => {
-                            reject(error)
-                        });
+                    return SqlHelper.executeQuerySingleResult<localStore>(connection, `${Queries.StoreById} ${id}`);
+                })
+                .then((queryResult: localStore) => {
+                    resolve(this.parseLocalStore(queryResult))
                 })
                 .catch((error: systemError) => {
                     reject(error)
