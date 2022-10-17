@@ -1,0 +1,37 @@
+{
+  "name": "masa-backend-nodejs",
+  "version": "2.0.0",
+  "description": "Masa NodeJS backend project",
+  "main": "source/server.ts",
+  "scripts": {
+    "dev": "nodemon source/server.ts",
+    "build": "rm -rf build/ && prettier --write source/ && tsc",
+    "leap": "mocha sendbox/test/leapyear.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Deadmord/masa-backend-nodejs.git"
+  },
+  "author": "Nikolay Belokonenko",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Deadmord/masa-backend-nodejs/issues"
+  },
+  "homepage": "https://github.com/Deadmord/masa-backend-nodejs#readme",
+  "dependencies": {
+    "@types/axios": "0.14.0",
+    "@types/express": "4.17.13",
+    "@types/morgan": "1.9.3",
+    "@types/mssql": "8.1.1",
+    "axios": "0.27.2",
+    "chai": "^4.3.6",
+    "express": "4.18.1",
+    "mocha": "^10.0.0",
+    "morgan": "1.10.0",
+    "msnodesqlv8": "2.6.0",
+    "mssql": "9.0.1",
+    "nodemon": "2.0.19",
+    "ts-node": "10.9.1",
+    "typescript": "4.8.2"
+  }
+}
