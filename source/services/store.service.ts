@@ -21,7 +21,7 @@ interface localProduct {
 
 interface IRetailStoreService {
     getStores(): Promise<store[]>;
-    getStore(id: number): Promise<store>;
+    getStoreById(id: number): Promise<store>;
     getUpdateStore(parametrTitle: string, parametrValue: string, id: number): Promise<string>;
 }
 interface IRetailService {
@@ -34,10 +34,7 @@ export class RetailStoreService implements IRetailStoreService {
         return new Promise<store[]>((resolve , reject) => {
             const result: store[] = [];
 
-            SqlHelper.openConnection()
-                .then((connection: Connection) => {
-                    return SqlHelper.executeQueryArrayResult<localStore>(connection, Queries.Store);            
-                })
+            SqlHelper.executeQueryArrayResult<localStore>(Queries.Store)          
                 .then((queryResult: localStore[]) => {
                     queryResult.forEach((store: localStore) => {
                         result.push(this.parseLocalStore(store));
@@ -51,14 +48,9 @@ export class RetailStoreService implements IRetailStoreService {
         });
     }
 
-    public getStore(id: number): Promise<store> {
-        let result: store;
+    public getStoreById(id: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
-
-            SqlHelper.openConnection()
-                .then((connection: Connection) => {
-                    return SqlHelper.executeQuerySingleResult<localStore>(connection, `${Queries.StoreById} ${id}`);
-                })
+            SqlHelper.executeQuerySingleResult<localStore>(Queries.StoreById, id)
                 .then((queryResult: localStore) => {
                     resolve(this.parseLocalStore(queryResult))
                 })
@@ -84,7 +76,7 @@ export class RetailStoreService implements IRetailStoreService {
                 else {
                     connection.query(`${query}`, (queryError: Error | undefined, queryResult: string[] | undefined) => {
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
+                            reject(ErrorHelper.parseError(ErrorCodes.QueryError, ErrorMessages.SqlQueryError));
                         }
                         else {
                             
@@ -108,28 +100,20 @@ export class RetailStoreService implements IRetailStoreService {
         };
     }
 }
+
 export class RetailService implements IRetailService {
     public getProducts(): Promise<product[]> {
         return new Promise<product[]>((resolve , reject) => {
             const result: product[] = [];
 
-            SqlHelper.openConnection()
-                .then((connection: Connection) => {
-                    connection.query(Queries.Product, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {  
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
-                        }
-                        else {
-                            if (queryResult !== undefined) {
-                                queryResult.forEach((product: localProduct ) => {
-                                    result.push(
-                                        this.parseLocalProduct(product)
-                                    )
-                                });
-                            }
-                            resolve(result);
-                        }
-                    })
+            SqlHelper.executeQueryArrayResult<localProduct>(Queries.Product)
+                .then((queryResult: localProduct[]) => {
+                    queryResult.forEach((product: localProduct ) => {
+                        result.push(
+                            this.parseLocalProduct(product)
+                        )
+                    });
+                    resolve(result);
                 })
                 .catch((error: systemError) => {
                     reject(error);
@@ -140,24 +124,9 @@ export class RetailService implements IRetailService {
 
     public getProduct(id: number): Promise<product> {
         return new Promise<product>((resolve, reject) => {
-            let result: product;
-
-            SqlHelper.openConnection()
-                .then((connection: Connection) => {
-                    connection.query(`${Queries.ProductById} ${id}`, (queryError: Error | undefined, queryResult: localProduct[] | undefined) => {
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.queryError, ErrorMessages.SqlQueryError));
-                        }
-                        else {
-                            if (queryResult !== undefined && queryResult.length === 1) {
-                                result = this.parseLocalProduct(queryResult[0])
-                             }
-                            else if (queryResult !== undefined && queryResult.length === 0) {
-                                //TODO: Not Found 
-                            }
-                            resolve(result);
-                        }
-                    })
+            SqlHelper.executeQuerySingleResult<localProduct>(Queries.ProductById, id)
+                .then((queryResult: localProduct) => {
+                    resolve(this.parseLocalProduct(queryResult))
                 })
                 .catch((error: systemError) => {
                     reject(error);

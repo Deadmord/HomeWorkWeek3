@@ -5,7 +5,8 @@
   "main": "source/server.ts",
   "scripts": {
     "dev": "nodemon source/server.ts",
-    "build": "rm -rf build/ && prettier --write source/ && tsc"
+    "build": "rm -rf build/ && prettier --write source/ && tsc",
+    "leap": "mocha sendbox/test/leapyear.test.js"
   },
   "repository": {
     "type": "git",
@@ -23,7 +24,9 @@
     "@types/morgan": "1.9.3",
     "@types/mssql": "8.1.1",
     "axios": "0.27.2",
+    "chai": "^4.3.6",
     "express": "4.18.1",
+    "mocha": "^10.0.0",
     "morgan": "1.10.0",
     "msnodesqlv8": "2.6.0",
     "mssql": "9.0.1",

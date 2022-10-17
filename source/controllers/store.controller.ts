@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { ErrorCodes, ErrorMessages } from '../constants';
 import { systemError, store, product } from '../entities';
+import { ErrorHelper } from '../helpers/error.helper';
+import { ResponseHelper } from '../helpers/response.helper';
 import { RetailService, RetailStoreService } from '../services/store.service';
+
 
 const retailService: RetailService = new RetailService();
 const retailStoreService: RetailStoreService = new RetailStoreService();
@@ -15,60 +18,36 @@ const getStores = async (req: Request, res: Response, next: NextFunction) => {
         })
 
         .catch ((error: systemError) => {
-            switch (error.code) {
-                case ErrorCodes.ConnectionError:
-                    return res.status(408).json({
-                        errorMessage: error.message
-                    });
-                case ErrorCodes.queryError:
-                    return res.status(406).json({
-                        errorMessage: error.message
-                    });
-                default:
-                    return res.status(400).json({
-                        errorMessage: error.message
-                    });
-            }
+            return ResponseHelper.handleError(res, error);
         })
 };
 
-const getStore = async (req: Request, res: Response, next: NextFunction) => {
+const getStoreById = async (req: Request, res: Response, next: NextFunction) => {
     let id: number = -1;
     const sId: string = req.params.id;
 
-    if (isNaN(Number(req.params.id))) {
-        // TODO: Error handling
+    if (isNaN(Number(sId))) {
+        const nonNumericError: systemError = ErrorHelper.parseError(ErrorCodes.NonNumericInput, ErrorMessages.NonNumericInput)
+        return ResponseHelper.handleError(res, nonNumericError);
     }
 
     if (sId !== null && sId !== undefined) {
         id = parseInt(sId);
     }
     else {
-        // TODO: Error handling
+        const noInputParameterError: systemError = ErrorHelper.parseError(ErrorCodes.InputParameterNotSupplied, ErrorMessages.InputParameterNotSupplied)
+        return ResponseHelper.handleError(res, noInputParameterError);
     }
 
     if (id > 0) {
-        retailStoreService.getStore(id)
+        retailStoreService.getStoreById(id)
             .then((result: store) => {
                 return res.status(200).json({
                     result
                 });
             })
             .catch((error: systemError) => {
-                switch (error.code) {
-                    case ErrorCodes.ConnectionError:
-                        return res.status(408).json({
-                            errorMessage: error.message
-                        });
-                    case ErrorCodes.queryError:
-                        return res.status(406).json({
-                            errorMessage: error.message
-                        });
-                    default:
-                        return res.status(400).json({
-                            errorMessage: error.message
-                        });
-                }
+                return ResponseHelper.handleError(res, error);
             });
     }
     else {
@@ -124,7 +103,7 @@ const getUpdateStore = async (req: Request, res: Response, next: NextFunction) =
                         return res.status(408).json({
                             errorMessage: error.message
                         });
-                    case ErrorCodes.queryError:
+                    case ErrorCodes.QueryError:
                         return res.status(406).json({
                             errorMessage: error.message
                         });
@@ -156,7 +135,7 @@ const getProducts = async (req: Request, res: Response, next: NextFunction) => {
                     return res.status(408).json({
                         errorMessage: error.message
                     });
-                case ErrorCodes.queryError:
+                case ErrorCodes.QueryError:
                     return res.status(406).json({
                         errorMessage: error.message
                     });
@@ -196,7 +175,7 @@ const getProduct = async (req: Request, res: Response, next: NextFunction) => {
                         return res.status(408).json({
                             errorMessage: error.message
                         });
-                    case ErrorCodes.queryError:
+                    case ErrorCodes.QueryError:
                         return res.status(406).json({
                             errorMessage: error.message
                         });
@@ -212,4 +191,4 @@ const getProduct = async (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-export default { getStores, getStore, getUpdateStore, getProducts, getProduct };
+export default { getStores, getStoreById, getUpdateStore, getProducts, getProduct };
