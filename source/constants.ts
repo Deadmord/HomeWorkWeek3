@@ -15,6 +15,10 @@ export class ErrorMessages {
     public static InputParameterNotSupplied: string = "Input parameter not supplied";
 }
 
+export class SqlParameters {
+    public static Id: string = "id";
+}
+
 export const DB_CONNECTION_STRING: string = "server=.;Database=X5RetailGroup;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
 
 export class Queries {
