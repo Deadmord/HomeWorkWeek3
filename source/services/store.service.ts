@@ -22,7 +22,7 @@ interface localProduct {
 interface IRetailStoreService {
     getStores(): Promise<store[]>;
     getStoreById(id: number): Promise<store>;
-    getUpdateStore(parametrTitle: string, parametrValue: string, id: number): Promise<string>;
+    updateStoreById( store: store): Promise<void>;
 }
 interface IRetailService {
     getProducts(): Promise<product[]>;
@@ -58,6 +58,18 @@ export class RetailStoreService implements IRetailStoreService {
                     reject(error)
                 });
         });
+    }
+
+    public updateStoreById(store: store): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            SqlHelper.executeQueryNoResult(Queries.UpdateStoreById, store.store_title, store.store_address, store.manager_id, store.id)
+                .then(() => {
+                    resolve();
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        })
     }
 
     public getUpdateStore(parametrTitle: string, parametrValue: string, id: number): Promise<string> {

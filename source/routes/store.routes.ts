@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.get('/general/stores', controller.getStores);
 router.get('/general/store/:id', controller.getStoreById);
-router.get('/general/store/update/:id/', controller.getUpdateStore);
+router.put('/general/store/:id', controller.updateStoreById);
 
 router.get('/general/products', controller.getProducts);
 router.get('/general/product/:id', controller.getProduct);

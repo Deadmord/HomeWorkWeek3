@@ -15,11 +15,17 @@ export class ErrorMessages {
     public static InputParameterNotSupplied: string = "Input parameter not supplied";
 }
 
+export class SqlParameters {
+    public static Id: string = "id";
+}
+
 export const DB_CONNECTION_STRING: string = "server=.;Database=X5RetailGroup;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
 
 export class Queries {
     public static Store: string = "SELECT * FROM store";
     public static StoreById: string = "SELECT * FROM store WHERE id = ?";
+    public static UpdateStoreById: string = "UPDATE store SET title = ?, address = ?, manager_id = ? WHERE id = ?";
+
     public static Product: string = "SELECT * FROM product";
     public static ProductById: string = "SELECT * FROM product WHERE id = ?";
 }
