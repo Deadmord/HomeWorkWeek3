@@ -47,35 +47,30 @@ const getStoreById = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 const updateStoreById = async (req: Request, res: Response, next: NextFunction) => {
-    let id: number = -1;
+    const numericParamOrError: number | systemError = RequestHelper.ParseNumericInput(req.params.id)
+    if(typeof numericParamOrError === "number") {
+        if (numericParamOrError > 0) {
+            const body: store = req.body;
 
-    const sId: string = req.params.id;
-    if (isNaN(Number(sId))) {
-        const nonNumericError: systemError = ErrorHelper.parseError(ErrorCodes.NonNumericInput, ErrorMessages.NonNumericInput)
-        return ResponseHelper.handleError(res, nonNumericError);
-    }
-
-    if (sId !== null && sId !== undefined) {
-        id = parseInt(sId);
-    }
-    else {
-        const noInputParameterError: systemError = ErrorHelper.parseError(ErrorCodes.InputParameterNotSupplied, ErrorMessages.InputParameterNotSupplied)
-        return ResponseHelper.handleError(res, noInputParameterError);
-    }
-
-    if (id > 0) {
-        retailStoreService.getStoreById(id)
-            .then((result: store) => {
-                return res.status(200).json({
-                    result
-                });
+            retailStoreService.updateStoreById({
+                id: numericParamOrError,
+                store_title: body.store_title,
+                store_address: body.store_address,
+                manager_id: body.manager_id
             })
-            .catch((error: systemError) => {
-                return ResponseHelper.handleError(res, error);
-            });
+                .then(() => {
+                    return res.sendStatus(200);
+                })
+                .catch((error: systemError) => {
+                    return ResponseHelper.handleError(res, error);
+                });
+        }
+        else{
+            //TODO: Error hendling
+        }
     }
     else {
-        // TODO: Error handling
+        return ResponseHelper.handleError(res, numericParamOrError);
     }
 };
 
