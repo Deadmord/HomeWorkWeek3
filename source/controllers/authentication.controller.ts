@@ -29,7 +29,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
             authenticationToken,
             TOKEN_SECRET,
             {
-                expiresIn: "30m",
+                expiresIn: "3h",
             });
 
         return res.status(200).json({
