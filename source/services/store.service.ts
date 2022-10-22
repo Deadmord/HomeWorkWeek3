@@ -1,28 +1,45 @@
 import { Connection, SqlClient, Error } from "msnodesqlv8";
-import { product, store, systemError } from "../entities";
-import { ErrorCodes, ErrorMessages, DB_CONNECTION_STRING, Queries } from "../constants";
-import { ErrorHelper } from "../helpers/error.helper";
-import { QueryHelper } from "../helpers/query.helper";
-import { SqlHelper } from "../helpers/sql.helper";
 import { connect } from "mssql";
+
+import { entityWithId, product, store, systemError } from "../entities";
+import { Queries, StoredProcedures } from "../constants";
+import { SqlHelper } from "../helpers/sql.helper";
+import { ErrorService } from "./error.service";
+import { Status } from "../enums";
+import { DateHelper } from "../helpers/date.helper";
+import * as _ from "underscore";
 
 interface localStore {
     id: number;
     title: string;
     address: string;
     manager_id: number;
+    create_date: Date;
+    update_date: Date;
+    create_user_id: number;
+    update_user_id: number;
+    status_id: Status;
 }
 
 interface localProduct {
     id: number;
     title: string;
     categories: string;
+    create_date: Date;
+    update_date: Date;
+    create_user_id: number;
+    update_user_id: number;
+    status_id: number;
 }
 
 interface IRetailStoreService {
     getStores(): Promise<store[]>;
     getStoreById(id: number): Promise<store>;
-    updateStoreById( store: store): Promise<void>;
+    updateStoreById( store: store, userId: number): Promise<store>;
+    addStore(store: store, userId: number): Promise<store>;
+    addStoreByStoredProcedure(store: store, userId: number): Promise<store>;
+    addStoreByStoredProcedureOutput(store: store, userId: number): Promise<store>;
+    deleteStoreById(id: number, userId: number): Promise<void>;
 }
 interface IRetailService {
     getProducts(): Promise<product[]>;
@@ -30,11 +47,20 @@ interface IRetailService {
 }
 
 export class RetailStoreService implements IRetailStoreService {
+
+    private _errorService: ErrorService;
+
+    constructor(
+        private errorService: ErrorService
+    ) { 
+        this._errorService = errorService;
+    }
+
     public getStores(): Promise<store[]> {
         return new Promise<store[]>((resolve , reject) => {
             const result: store[] = [];
 
-            SqlHelper.executeQueryArrayResult<localStore>(Queries.Store)          
+            SqlHelper.executeQueryArrayResult<localStore>(this._errorService, Queries.Store, Status.Active)          
                 .then((queryResult: localStore[]) => {
                     queryResult.forEach((store: localStore) => {
                         result.push(this.parseLocalStore(store));
@@ -50,7 +76,7 @@ export class RetailStoreService implements IRetailStoreService {
 
     public getStoreById(id: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
-            SqlHelper.executeQuerySingleResult<localStore>(Queries.StoreById, id)
+            SqlHelper.executeQuerySingleResult<localStore>(this._errorService, Queries.StoreById, id, Status.Active)
                 .then((queryResult: localStore) => {
                     resolve(this.parseLocalStore(queryResult))
                 })
@@ -60,11 +86,12 @@ export class RetailStoreService implements IRetailStoreService {
         });
     }
 
-    public updateStoreById(store: store): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            SqlHelper.executeQueryNoResult(Queries.UpdateStoreById, store.store_title, store.store_address, store.manager_id, store.id)
+    public updateStoreById(store: store, userId: number): Promise<store> {
+        return new Promise<store>((resolve, reject) => {
+            const updateDate: Date = new Date();
+            SqlHelper.executeQueryNoResult(this._errorService, Queries.UpdateStoreById, false, store.store_title, store.store_address, store.manager_id,  DateHelper.dateToString(updateDate), userId, store.id, Status.Active)
                 .then(() => {
-                    resolve();
+                    resolve(store);
                 })
                 .catch((error: systemError) => {
                     reject(error);
@@ -72,34 +99,65 @@ export class RetailStoreService implements IRetailStoreService {
         })
     }
 
-    public getUpdateStore(parametrTitle: string, parametrValue: string, id: number): Promise<string> {
-        let result: string;
-        return new Promise<string>((resolve, reject) => {
+    public addStore(store: store, userId: number): Promise<store> {
+        return new Promise<store>((resolve, reject) => {
+            const createDate: string = DateHelper.dateToString(new Date());
+            SqlHelper.createNew(this._errorService, Queries.AddStore, store, store.store_title, store.store_address, store.manager_id, createDate, createDate, userId, userId, Status.Active)
+                .then((result: entityWithId) => {
+                    resolve(result as store);
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        });
+    }
 
-            const sql: SqlClient = require("msnodesqlv8");
+    public addStoreByStoredProcedure(store: store, userId: number): Promise<store> {
+        return new Promise<store>((resolve, reject) => {
+            SqlHelper.executeStoredProcedure(this._errorService, StoredProcedures.AddStore, store, store.store_title, store.store_address, store.manager_id, userId)
+                .then(() => {
+                    resolve(store);
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        });
+    }
 
-            const connectionString: string = DB_CONNECTION_STRING;
-            const query: string = QueryHelper.updateData('store', parametrTitle, parametrValue, id);
+    public addStoreByStoredProcedureOutput(store: store, userId: number): Promise<store> {
+        return new Promise<store>((resolve, reject) => {
+            SqlHelper.executeStoredProcedureWithOutput(this._errorService, StoredProcedures.AddStore, store, store.store_title, store.store_address, store.manager_id, userId)
+                .then(() => {
+                    resolve(store);
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        });
+    }
 
-            sql.open(connectionString, (connectionError: Error, connection: Connection) => {
-                if (connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
-                }
-                else {
-                    connection.query(`${query}`, (queryError: Error | undefined, queryResult: string[] | undefined) => {
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.QueryError, ErrorMessages.SqlQueryError));
-                        }
-                        else {
-                            
-                            if (queryResult !== undefined) {
-                                result = queryResult[0];
-                            }
-                            resolve('Update successful!');
-                        }
-                    })
-                }
-            });
+    public deleteStoreById(id: number, userId: number): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const updateDate: Date = new Date();
+            SqlHelper.executeQueryNoResult(this._errorService, Queries.DeleteStoreById, true, DateHelper.dateToString(updateDate), userId, Status.NotActive, id, Status.Active)
+                .then(() => {
+                    resolve();
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        });
+    }
+
+    public getStoreByTitle(title: string): Promise<store[]> {
+        return new Promise<store[]>((resolve, reject) => {
+            SqlHelper.executeQueryArrayResult<localStore>(this._errorService, Queries.StoreByTitle, `%${title}%`)
+                .then((queryResult: localStore[]) => {
+                    resolve(_.map(queryResult, (result: localStore) => this.parseLocalStore(result)));
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
         });
     }
 
@@ -114,11 +172,20 @@ export class RetailStoreService implements IRetailStoreService {
 }
 
 export class RetailService implements IRetailService {
+
+    private _errorService: ErrorService;
+
+    constructor(
+        private errorService: ErrorService
+    ) { 
+        this._errorService = errorService;
+    }
+
     public getProducts(): Promise<product[]> {
         return new Promise<product[]>((resolve , reject) => {
             const result: product[] = [];
 
-            SqlHelper.executeQueryArrayResult<localProduct>(Queries.Product)
+            SqlHelper.executeQueryArrayResult<localProduct>(this._errorService, Queries.Product, Status.Active)
                 .then((queryResult: localProduct[]) => {
                     queryResult.forEach((product: localProduct ) => {
                         result.push(
@@ -136,7 +203,7 @@ export class RetailService implements IRetailService {
 
     public getProduct(id: number): Promise<product> {
         return new Promise<product>((resolve, reject) => {
-            SqlHelper.executeQuerySingleResult<localProduct>(Queries.ProductById, id)
+            SqlHelper.executeQuerySingleResult<localProduct>(this._errorService, Queries.ProductById, id, Status.Active)
                 .then((queryResult: localProduct) => {
                     resolve(this.parseLocalProduct(queryResult))
                 })

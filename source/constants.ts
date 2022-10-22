@@ -1,31 +1,32 @@
-export class ErrorCodes {
-    public static ConnectionError: number = 100;
-    public static QueryError: number = 101;
-    public static NoData: number = 102;
-    public static NonNumericInput: number = 103;
-    public static InputParameterNotSupplied: number = 104;
-}
-
-export class ErrorMessages {
-    public static DbconnectionError: string = "DB server connection error";
-    public static SqlQueryError: string = "Incorrect query";
-    public static HttpQueryError: string = "Misdirected Request";
-    public static NoDataFound: string = "Not found";
-    public static NonNumericInput: string = "Invalid input. Not a number"
-    public static InputParameterNotSupplied: string = "Input parameter not supplied";
-}
-
 export class SqlParameters {
     public static Id: string = "id";
 }
 
 export const DB_CONNECTION_STRING: string = "server=.;Database=X5RetailGroup;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
-
+export const NON_EXISTENT_ID: number = -1;
+export const TOKEN_SECRET: string = "d509c3f7-7538-4c8f-9153-3d7c4c1760ed"; //Online GUID generator
 export class Queries {
-    public static Store: string = "SELECT * FROM store";
-    public static StoreById: string = "SELECT * FROM store WHERE id = ?";
-    public static UpdateStoreById: string = "UPDATE store SET title = ?, address = ?, manager_id = ? WHERE id = ?";
+    public static Store: string = "SELECT * FROM store WHERE status_id = ?";
+    public static StoreById: string = "SELECT * FROM store WHERE id = ? AND status_id = ?";
+    public static StoreByTitle: string = "SELECT * FROM store WHERE title LIKE ?";
+    public static UpdateStoreById: string = "UPDATE store SET title = ?, address = ?, manager_id = ?, update_date = ?, update_user_id = ? WHERE id = ? AND status_id = ?";
+    
+    public static AddStore: string = "INSERT store (title, address, manager_id, create_date, update_date, create_user_id, update_user_id, status_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    public static DeleteStoreById: string = "UPDATE store SET update_date = ?, update_user_id = ?, status_id = ? WHERE id = ? AND status_id = ?";
+    
+    public static GetUserByLogin: string = "SELECT id, password, role_id FROM [user] WHERE login = ?";
 
-    public static Product: string = "SELECT * FROM product";
-    public static ProductById: string = "SELECT * FROM product WHERE id = ?";
+    public static UpdateUserById: string = "UPDATE [user] SET first_name = ?, last_name = ?, update_date = ?, update_user_id = ? WHERE id = ? AND status_id = ?";
+    public static AddUser: string = "INSERT [user] (first_name, last_name, login, password, role_id, create_date, update_date, create_user_id, update_user_id, status_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    public static DeleteUserById: string = "UPDATE [user] SET update_date = ?, update_user_id = ?, status_id = ? WHERE id = ? AND status_id = ?";
+
+    //poduct
+    public static Product: string = "SELECT * FROM product WHERE status_id = ?";
+    public static ProductById: string = "SELECT * FROM product WHERE id = ? AND status_id = ?";
+
+    public static SelectIdentity: string = "SELECT SCOPE_IDENTITY() AS id;";
+}
+export class StoredProcedures {
+    public static AddStore: string = "sp_create_board_type"; //TODO: Исправить тут SP!!!!
+    public static AddStoreOutput: string = "sp_create_board_type_output"; //TODO: Исправить тут SP!!!!
 }
