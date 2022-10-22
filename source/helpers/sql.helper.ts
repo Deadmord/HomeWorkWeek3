@@ -1,18 +1,21 @@
-import { Connection, SqlClient, Error } from "msnodesqlv8";
-import { DB_CONNECTION_STRING, ErrorCodes, ErrorMessages } from "../constants";
-import { systemError } from "../entities";
-import { ErrorHelper } from "./error.helper";
+import { Connection, SqlClient, Error, Query, ProcedureManager } from "msnodesqlv8";
+import { DB_CONNECTION_STRING, Queries } from "../constants";
+import { entityWithId, systemError } from "../entities";
+import { AppError } from "../enums";
+import { ErrorService } from "../services/error.service";
+//import { ErrorHelper } from "./error.helper";
 
 export class SqlHelper {
     static sql: SqlClient = require("msnodesqlv8");
 
-    public static executeQueryArrayResult<T>(query: string): Promise<T[]> {
+        // FIXME: SQL injection for LIKE query
+    public static executeQueryArrayResult<T>(errorService: ErrorService, query: string, ...params: (string | number)[]): Promise<T[]> {
         return new Promise<T[]>((resolve, reject) => {
-            SqlHelper.openConnection()
+            SqlHelper.openConnection(errorService)
                 .then((connection: Connection) => {
-                    connection.query(query, (queryError: Error | undefined, queryResult: T[] | undefined) => {  
+                    connection.query(query, params, (queryError: Error | undefined, queryResult: T[] | undefined) => {  
                         if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.QueryError, ErrorMessages.SqlQueryError));
+                            reject(errorService.getError(AppError.QueryError));
                         }
                         else {
                             if (queryResult !== undefined) {
@@ -24,73 +27,182 @@ export class SqlHelper {
                         }
                     });
                 })
-                .catch((error) => {
+                .catch((error: systemError) => {
                     reject(error);
                 })
         });
     }
 
-    public static executeQuerySingleResult<T>(query: string, ...params: (number | string)[]): Promise<T> {
-        return new Promise<T>((resolve, reject) => {
-            SqlHelper.openConnection()
-                .then((connection: Connection) => {
-                    connection.query(query, params, (queryError: Error | undefined, queryResult: T[] | undefined) => {  
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.QueryError, ErrorMessages.SqlQueryError));
+    public static executeQuerySingleResult<T>(errorService: ErrorService, query: string, ...params: (number | string)[]): Promise<T> {
+        return new Promise<T>(async (resolve, reject) => {
+            try{
+                const connection: Connection = await SqlHelper.openConnection(errorService);
+
+                connection.query(query, params, (queryError: Error | undefined, queryResult: T[] | undefined) => {  
+                    if (queryError) {
+                        reject(errorService.getError(AppError.QueryError));
+                    }
+                    else {
+                        const notFoundError: systemError = errorService.getError(AppError.NoData);
+                        
+                        if (queryResult !== undefined) {
+                            switch (queryResult.length) {
+                                case 0:
+                                    reject(notFoundError)
+                                    break;
+
+                                case 1:
+                                    resolve(queryResult[0]);
+                                    break;
+
+                                default:
+                                    resolve(queryResult[0]);
+                                    break;
+                            }
                         }
                         else {
-                            const notFoundError: systemError = ErrorHelper.parseError(ErrorCodes.NoData, ErrorMessages.SqlQueryError);
-                            if (queryResult !== undefined) {
-                                switch (queryResult.length) {
-                                    case 0:
-                                        reject(notFoundError)
-                                        break;
-                                    case 1:
-                                        resolve(queryResult[0]);
-                                        break;
-                                    default:
-                                        resolve(queryResult[0]);
-                                        break;
-                                }
+                            reject(notFoundError);
+                        }
+                    } 
+                });
+            }
+            catch (error: any) {
+                    reject(error as systemError)
+            }
+        });
+    }
+
+    public static executeQueryNoResult(errorService: ErrorService, query: string, ignoreNoRowsAffected: boolean, ...params: (number | string)[]): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            SqlHelper.openConnection(errorService)
+                .then((connection: Connection) => {
+                    const q: Query = connection.query(query, params, (queryError: Error | undefined) => {  
+                        if (queryError) {
+                            switch (queryError.code) {
+                                case 547:
+                                    reject(errorService.getError(AppError.DeletionConflict));
+                                    break;
+                                default:
+                                    reject(errorService.getError(AppError.QueryError));
+                                    break;
+                            }
+                        } 
+                    });
+
+                    q.on('rowcount', (rowCount: number) => {
+                        // If not ignoring rows affected AND ALSO rows affected equals zero then
+                        if (!ignoreNoRowsAffected && rowCount === 0) {
+                            reject(errorService.getError(AppError.NoData));
+                            return;
+                        }
+                        
+                        resolve();
+                    });
+
+                    // WITHOUT return after reject()
+                    // q.on('rowcount', (rowCount: number) => {
+                    //     // If not ignoring rows affected AND ALSO rows affected equals zero then
+                    //     if (!ignoreNoRowsAffected && rowCount === 0) {
+                    //         reject(errorService.getError(AppError.NoData));
+                    //         // since the body of the callback is finished here no need in return
+                    //     }
+                    //     else {
+                    //         resolve();
+                    //     }
+                    // });
+                })
+                .catch((error) => {
+                    reject(error);
+                })
+            
+        });
+    }
+
+    public static createNew(errorService: ErrorService, query: string, original: entityWithId, ...params: (string | number)[]): Promise<entityWithId> {
+        return new Promise<entityWithId>((resolve, reject) => {
+            SqlHelper.openConnection(errorService)
+                .then((connection: Connection) => {
+                    const queries: string[] = [query, Queries.SelectIdentity];
+                    const combinedQuery: string = queries.join(";");
+                    let executionCounter: number = 0;
+                    connection.query(combinedQuery, params, (queryError: Error | undefined, queryResult: entityWithId[] | undefined) => {
+                        if (queryError) {
+                            reject(errorService.getError(AppError.QueryError));
+                        }
+                        else {
+                            executionCounter++; // executionCounter = executionCounter + 1;
+
+                            if (executionCounter === queries.length) {
+                                SqlHelper.treatInsertResult(errorService, original, queryResult, resolve, reject);
+                            }
+                        }
+                    });
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                })
+        });
+    }
+    
+    public static executeStoredProcedure(errorService: ErrorService, procedureName: string, original: entityWithId, ...params: (string | number)[]): Promise<entityWithId> {
+        return new Promise<entityWithId>((resolve, reject) => {
+            SqlHelper.openConnection(errorService)
+                .then((connection) => {
+                    const pm: ProcedureManager = connection.procedureMgr();
+                    pm.callproc(procedureName, params, (storedProcedureError: Error | undefined, results: entityWithId[] | undefined, output: any[] | undefined) => {
+                        if (storedProcedureError) {
+                            reject(errorService.getError(AppError.QueryError));
+                        }
+                        else {
+                            const id: number | null = SqlHelper.treatInsertResult2(results);
+                            if (id !== null) {
+                                original.id = id;
+                                resolve(original);
                             }
                             else {
-                                reject(notFoundError);
+                                reject(errorService.getError(AppError.QueryError));
                             }
-                        } 
-                    })
+                        }
+                    });
                 })
-                .catch((error) => {
+                .catch((error: systemError) => {
                     reject(error);
-                })
-            
+                });
         });
     }
 
-    public static executeQueryNoResult(query: string, ...params: (number | string)[]): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            SqlHelper.openConnection()
-                .then((connection: Connection) => {
-                    connection.query(query, params, (queryError: Error | undefined) => {  
-                        if (queryError) {
-                            reject(ErrorHelper.parseError(ErrorCodes.QueryError, ErrorMessages.SqlQueryError));
+    public static executeStoredProcedureWithOutput(errorService: ErrorService, procedureName: string, original: entityWithId, ...params: (string | number)[]): Promise<entityWithId> {
+        return new Promise<entityWithId>((resolve, reject) => {
+            SqlHelper.openConnection(errorService)
+                .then((connection) => {
+                    const pm: ProcedureManager = connection.procedureMgr();
+                    params.push(original.id);
+                    pm.callproc(procedureName, params, (storedProcedureError: Error | undefined, results: any[] | undefined, output: number[] | undefined) => {
+                        if (storedProcedureError) {
+                            reject(errorService.getError(AppError.QueryError));
                         }
                         else {
-                            resolve();
-                        } 
-                    })
+                            if (output?.length === 2) {
+                                original.id = output[1];
+                                resolve(original);
+                            }
+                            else {
+                                reject(errorService.getError(AppError.QueryError));
+                            }
+                        }
+                    });
                 })
-                .catch((error) => {
+                .catch((error: systemError) => {
                     reject(error);
-                })
-            
+                });
         });
     }
 
-    private static openConnection(): Promise<Connection> {
+    private static openConnection(errorService: ErrorService): Promise<Connection> {
         return new Promise<Connection>((resolve, reject) => {
             SqlHelper.sql.open(DB_CONNECTION_STRING, (connectionError: Error, connection: Connection) => {
                 if (connectionError) {
-                    reject(ErrorHelper.parseError(ErrorCodes.ConnectionError, ErrorMessages.DbconnectionError));
+                    reject(errorService.getError(AppError.ConnectionError));
                 }
                 else {
                     resolve(connection);
@@ -99,4 +211,34 @@ export class SqlHelper {
         });
     }
 
+    private static treatInsertResult(errorService: ErrorService, original: entityWithId, queryResult: entityWithId[] | undefined, resolve: (result: entityWithId) => void, reject: (error: systemError) => void): void {
+        const badQueryError: systemError = errorService.getError(AppError.QueryError);
+
+        if (queryResult !== undefined) {
+            if (queryResult.length === 1) {
+                original.id = queryResult[0].id;
+                resolve(original);
+            }
+            else {
+                reject(badQueryError);
+            }
+        }
+        else {
+            reject(badQueryError);
+        }
+    }
+
+    private static treatInsertResult2(queryResult: entityWithId[] | undefined): number | null {
+        if (queryResult !== undefined) {
+            if (queryResult.length === 1) {
+                return queryResult[0].id;
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
+    }
 }
