@@ -1,5 +1,6 @@
 import { map, filter } from "underscore";
 import { columnDefinition, tableDefinition } from "../db-entities";
+import { Status } from "../enums";
 import { SqlHelper } from "../helpers/sql.helper";
 import { ErrorService } from "./error.service";
 
@@ -29,9 +30,9 @@ export class DbTable<T> implements IDbTable<T> {
 
     public async getById<T>(id: number): Promise<T> {
         let queriedFields: string = map(filter(this._table.fields, (column: columnDefinition) => column.isForOutput), (column: columnDefinition) => column.dbName).join(", ");
-        let sql: string = `SELECT ${queriedFields} FROM ${this._table.name} WHERE id = ?`;
+        let sql: string = `SELECT ${queriedFields} FROM ${this._table.name} WHERE id = ? AND status_id = ?`;
 
-        const result: T = await SqlHelper.executeQuerySingleResult<T>(this.errorService, sql, id)
+        const result: T = await SqlHelper.executeQuerySingleResult<T>(this.errorService, sql, id, Status.Active)
 
         // [0] = {first_name = "Demo", id = 2} => {firstName = "Demo", id = 2}
         this._table.fields.forEach((column: columnDefinition) => {

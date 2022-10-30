@@ -37,4 +37,9 @@ export interface user extends entityWithId {
     lastName: string;
     login?: string;
     password?: string;
+    position?: string;
+    role?: string;
+    create_date?: Date;
+    update_date?: Date;
+    supervisor?: string;
 }

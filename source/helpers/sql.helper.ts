@@ -198,6 +198,78 @@ export class SqlHelper {
         });
     }
 
+    public static executeStoredProcedureSingleResult<T>(errorService: ErrorService, procedureName: string, ...params: (string | number)[]): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            SqlHelper.openConnection(errorService)
+                .then((connection) => {
+                    const pm: ProcedureManager = connection.procedureMgr();
+                    pm.callproc(procedureName, params, (storedProcedureError: Error | undefined, result: T[] | undefined, output: any[] | undefined) => {
+                        if (storedProcedureError) {
+                            reject(errorService.getError(AppError.QueryError));
+                        }
+                        else {
+                            const notFoundError: systemError = errorService.getError(AppError.NoData);
+                            if (result !== undefined) {     //TODO: refactor to treatresult function
+                                switch (result.length) {
+                                    case 0:
+                                        reject(notFoundError)
+                                        break;
+    
+                                    case 1:
+                                        resolve(result[0]);
+                                        break;
+    
+                                    default:
+                                        resolve(result[0]); //TODO: Add SP error
+                                        break;
+                                }
+                            }
+                            else {
+                                reject(notFoundError);
+                            }
+                            // const id: number | null = SqlHelper.treatInsertResult2(results);
+                            // if (id !== null) {
+                            //     original.id = id;
+                            //     resolve(original);
+                            // }
+                            // else {
+                            //     reject(errorService.getError(AppError.QueryError));
+                            // }
+                        }
+                    });
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        });
+    }
+
+    public static executeStoredProcedureArrayResult<T>(errorService: ErrorService, procedureName: string, ...params: (string | number)[]): Promise<T[]> {
+        return new Promise<T[]>((resolve, reject) => {
+            SqlHelper.openConnection(errorService)
+                .then((connection: Connection) => {
+                    const pm: ProcedureManager = connection.procedureMgr();
+                    pm.callproc(procedureName, params, (storedProcedureError: Error | undefined, result: T[] | undefined, output: any[] | undefined) => {
+                        if (storedProcedureError) {
+                            reject(errorService.getError(AppError.QueryError));
+                        }
+                        else {
+                            const notFoundError: systemError = errorService.getError(AppError.NoData);
+                            if (result !== undefined) {     //TODO: refactor to treatresult function
+                                resolve(result);
+                            }
+                            else {
+                                reject([]);
+                            }
+                        }
+                    });
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                })
+        });
+    }
+
     private static openConnection(errorService: ErrorService): Promise<Connection> {
         return new Promise<Connection>((resolve, reject) => {
             SqlHelper.sql.open(DB_CONNECTION_STRING, (connectionError: Error, connection: Connection) => {

@@ -29,4 +29,7 @@ export class Queries {
 export class StoredProcedures {
     public static AddStore: string = "sp_create_board_type"; //TODO: Исправить тут SP!!!!
     public static AddStoreOutput: string = "sp_create_board_type_output"; //TODO: Исправить тут SP!!!!
+    
+    public static GetUserById: string = "sp_get_employee_by_ID";
+    public static GetUserByStoreId: string = "sp_get_employees_by_store_ID";
 }
