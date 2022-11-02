@@ -198,7 +198,7 @@ export class SqlHelper {
         });
     }
 
-    public static executeStoredProcedureSingleResult<T>(errorService: ErrorService, procedureName: string, ...params: (string | number)[]): Promise<T> {
+    public static executeStoredProcedureSingleResult<T>(errorService: ErrorService, procedureName: string, ...params: (string | number | null)[]): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             SqlHelper.openConnection(errorService)
                 .then((connection) => {

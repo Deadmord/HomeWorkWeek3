@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from 'express';
 import { NON_EXISTENT_ID } from '../constants';
 import { TableNames } from "../db-entities";
-import { AuthenticatedRequest, systemError, user } from '../entities';
+import { AuthenticatedRequest, systemError, user, userRelation } from '../entities';
 import { RequestHelper } from '../helpers/request.helper';
 import { ResponseHelper } from '../helpers/response.helper';
 import { DbService } from "../services/db.service";
@@ -144,4 +144,39 @@ const spGetByStoreId = async (req: Request, res: Response, next: NextFunction) =
     }
 };
 
-export default { getById, add, updateById, deleteById, spGetById, spGetByStoreId };
+const spUpdateById = async (req: Request, res: Response, next: NextFunction) => {
+    const numericParamOrError: number | systemError = RequestHelper.ParseNumericInput(errorService, req.params.id)
+    if (typeof numericParamOrError === "number") {
+        if (numericParamOrError > 0) {
+            const body: userRelation = req.body;
+
+            userService.spUpdateById({
+                id: numericParamOrError,
+                storeId: body.storeId,
+                supervisorId: body.supervisorId,
+                firstName: body.firstName,
+                lastName: body.lastName,
+                role: body.role,
+                status: body.status,
+                newStoreId: body.newStoreId,
+                newSupervisorId: body.newSupervisorId,
+                position: body.position,
+                relation_status: body.relation_status
+            }, (req as AuthenticatedRequest).userData.userId)
+                .then((result: userRelation) => {
+                    return res.status(200).json(result);
+                })
+                .catch((error: systemError) => {
+                    return ResponseHelper.handleError(res, error);
+                });
+        }
+        else {
+            // TODO: Error handling
+        }
+    }
+    else {
+        return ResponseHelper.handleError(res, numericParamOrError);
+    }
+};
+
+export default { getById, add, updateById, deleteById, spGetById, spGetByStoreId, spUpdateById };

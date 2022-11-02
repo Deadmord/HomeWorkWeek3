@@ -1,6 +1,6 @@
 import * as _ from "underscore";
 import { Queries, StoredProcedures } from "../constants";
-import { entityWithId, systemError, user } from "../entities";
+import { entityWithId, systemError, user, userRelation } from "../entities";
 import { Role, Status } from "../enums";
 import { DateHelper } from "../helpers/date.helper";
 import { SqlHelper } from "../helpers/sql.helper";
@@ -12,14 +12,21 @@ interface localUser {
     lastname: string;
     login: string;
     password: string;
-    status: string;
-    position: string;
     role: string;
-    create_date: Date;
-    update_date: Date;
-    create_user_id: number;
-    update_user_id: number;
+    user_create_date: Date;
+    user_update_date: Date;
+    user_create_user_id: number;
+    user_update_user_id: number;
+    user_status: string;
+    store: string;
     supervisor: string;
+    position: string;
+    relation_create_date: Date;
+    relation_update_date: Date;
+    relation_create_user_id: number;
+    relation_update_user_id: number;
+    relation_status: string;
+
 }
 interface IUserService {
     updateById(user: user, userId: number): Promise<user>;
@@ -103,18 +110,55 @@ export class UserService implements IUserService {
         });
     }
 
-    private parseLocalUser(local: localUser): user {
+    public spUpdateById(user: userRelation, userId: number): Promise<userRelation> {
+        return new Promise<userRelation>((resolve, reject) => {
+            //const updateDate: Date = new Date();
+            SqlHelper.executeStoredProcedureSingleResult<localUser>(this.errorService, StoredProcedures.UpdateUserAndRelationByUserIdStoreIDSupID, 
+                user.id, 
+                user.storeId ? user.storeId : null,
+                user.supervisorId ? user.supervisorId : null, 
+                Status.Active,
+                userId,
+                user.firstName ? user.firstName : null,
+                user.lastName ? user.lastName : null,
+                user.role ? user.role : null,
+                user.status ? user.status : null,
+                user.newStoreId ? user.newStoreId : null,
+                user.newSupervisorId ? user.newSupervisorId : null,
+                user.position ? user.position : null,
+                user.relation_status ? user.relation_status : null
+
+                )                                       //TODO: Add all parameters from SP
+                .then((spResult: localUser) => {
+                    resolve(this.parseLocalUser(spResult))
+                })
+                .catch((error: systemError) => {
+                    reject(error);
+                });
+        });
+    }
+
+    private parseLocalUser(local: localUser): userRelation {
         return {
             id: local.id,
             firstName: local.firstname,
             lastName: local.lastname,
             login: local.login,
             password: local.password,
-            position: local.position,
             role: local.role,
-            create_date: local.create_date,
-            update_date: local.update_date,
-            supervisor: local.supervisor
+            create_date: local.user_create_date,
+            update_date: local.user_update_date,
+            create_user_id: local.user_create_user_id,
+            update_user_id: local.user_update_user_id,
+            status: local.user_status,
+            store: local.store,
+            supervisor: local.supervisor,
+            position: local.position,
+            relation_create_date: local.relation_create_date,
+            relation_update_date: local.relation_update_date,
+            relation_create_user_id: local.relation_create_user_id,
+            relation_update_user_id: local.relation_update_user_id,
+            relation_status: local.relation_status
         };
     }
 }

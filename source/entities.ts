@@ -41,5 +41,21 @@ export interface user extends entityWithId {
     role?: string;
     create_date?: Date;
     update_date?: Date;
+    create_user_id?: number;
+    update_user_id?: number;
+    status?: string;
     supervisor?: string;
+}
+export interface userRelation extends user {
+    storeId?: number;
+    newStoreId?: number;
+    store?: string;
+    supervisorId?: number;
+    newSupervisorId?: number;
+    supervisor?: string; 
+    relation_create_date?: Date;
+    relation_update_date?: Date;
+    relation_create_user_id?: number;
+    relation_update_user_id?: number;
+    relation_status?: string;
 }

@@ -9,7 +9,8 @@ router.post('/',        middleware.verifyToken([Role.Administrator]), controller
 router.put('/:id',      middleware.verifyToken([Role.Administrator]), controller.updateById);
 router.delete('/:id',   middleware.verifyToken([Role.Administrator]), controller.deleteById);
 
-router.get('/spGetById/:id',      middleware.verifyToken([Role.Administrator]), controller.spGetById);
-router.get('/spGetByStoreId/:id',      middleware.verifyToken([Role.Administrator]), controller.spGetByStoreId);
+router.get('/spGetById/:id',        middleware.verifyToken([Role.Administrator]), controller.spGetById);
+router.get('/spGetByStoreId/:id',   middleware.verifyToken([Role.Administrator]), controller.spGetByStoreId);
+router.put('/spUpdateById/:id',     middleware.verifyToken([Role.Administrator]), controller.spUpdateById);
 
 export default { router };
