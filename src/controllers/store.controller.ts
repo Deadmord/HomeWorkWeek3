@@ -4,10 +4,10 @@ import { systemError, store, product, AuthenticatedRequest } from '../entities';
 import { RequestHelper } from '../helpers/request.helper';
 import { ResponseHelper } from '../helpers/response.helper';
 import { ErrorService } from '../services/error.service';
-import { RetailService, RetailStoreService } from '../services/store.service';
+import { RetailProductService, RetailStoreService } from '../services/store.service';
 
 const errorService: ErrorService = new ErrorService();
-const retailProductService: RetailService = new RetailService(errorService);
+const retailProductService: RetailProductService = new RetailProductService(errorService);
 const retailStoreService: RetailStoreService = new RetailStoreService(errorService);
 
 const getStores = async (req: Request, res: Response, next: NextFunction) => {

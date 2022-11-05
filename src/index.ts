@@ -1,8 +1,10 @@
-import express, { Express, Application, Request, Response } from "express"
-import * as http from "http"
-import cors from "cors"
-import { RouteConfig } from "./framework/route.config"
-import { UserRoutes } from "./modules/user/user.route"
+import express, { Express, Application, Request, Response } from "express";
+import * as http from "http";
+import cors from "cors";
+import { RouteConfig } from "./framework/route.config";
+import { UserRoutes } from "./modules/user/user.route";
+import { StoreRoutes } from "./modules/store/store.route";
+import { AuthenticationRoutes } from "./core/authentication/authentication.route";
 
 const routes: Array<RouteConfig> = [];
 const app: Express = express();
@@ -17,7 +19,9 @@ const PORT: number = 5000;
 //   });
 // } 
 
+routes.push(new AuthenticationRoutes(app));
 routes.push(new UserRoutes(app));
+routes.push(new StoreRoutes(app));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Welcome world!!!");
