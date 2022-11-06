@@ -5,13 +5,15 @@ import { RouteConfig } from "./framework/route.config";
 import { UserRoutes } from "./modules/user/user.route";
 import { StoreRoutes } from "./modules/store/store.route";
 import { AuthenticationRoutes } from "./core/authentication/authentication.route";
+import LoggerService from "./core/logger.service";
+import { StaticEnvironment } from "./core/environment.static";
+
+LoggerService.initialize();
 
 const routes: Array<RouteConfig> = [];
 const app: Express = express();
 app.use(express.json());
 app.use(cors());
-
-const PORT: number = 5000;
 
 // if (process.env.DEBUG) {
 //   process.on("unhandledRejection", function(reason) {
@@ -29,9 +31,9 @@ app.get("/", (req: Request, res: Response) => {
 
 const server: http.Server = http.createServer(app);
 
-server.listen(PORT, () => {
-  console.log(`Server is running on ${PORT}`);
+server.listen(StaticEnvironment.serverPort, () => {
+  LoggerService.info(`Server is running on ${StaticEnvironment.serverPort}`);
   routes.forEach((route: RouteConfig) => {
-    console.log(`Routes configured for ${route.getName()}`)
+    LoggerService.info(`Routes configured for ${route.getName()}`);
   });
 });

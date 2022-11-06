@@ -1,10 +1,9 @@
 import * as _ from "underscore";
 import { Queries, StoredProcedures } from "../../constants";
 import { entityWithId, systemError, user, userRelation } from "../../entities";
-import { Role, Status } from "../../enums";
+import { Role, Status, TableNames } from "../../enums";
 import { DateHelper } from "../../framework/date.helper";
 import { SqlHelper } from "../../core/sql.helper";
-import { TableNames } from "../../db-entities";
 import DbService from "../../core/dbService/db.service";
 
 interface localUser {

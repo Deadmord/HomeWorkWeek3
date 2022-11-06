@@ -1,24 +1,32 @@
 import express, { Application } from "express"
 
 export abstract class RouteConfig {
-    app: Application
-    name: string
-    protected baseUrl: string
+    private _baseUrl: string;
+    private _app: Application;
+    private _name: string;
 
     constructor(
-        app: Application, 
+        app: Application,
         name: string,
         baseUrl: string
     ) {
-        this.app = app
-        this.name = name
-        this.baseUrl = baseUrl
-        this.configureRoutes()
+        this._app = app;
+        this._name = name;
+        this._baseUrl = baseUrl;
+        this.configureRoutes();
     }
 
-    getName() {
-        return this.name
+    protected get app(): Application {
+        return this._app;
     }
 
-    abstract configureRoutes(): Application
+    protected get baseUrl(): string {
+        return this._baseUrl;
+    }
+
+    public getName() {
+        return this._name;
+    }
+
+    abstract configureRoutes(): Application;
 }

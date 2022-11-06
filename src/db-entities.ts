@@ -1,12 +1,4 @@
-export enum ColumnType {
-    Integer = 1,
-    Varchar,
-    Boolean
-}
-
-export enum TableNames {
-    User = "[user]"
-}
+import { ColumnType, ColumnUpdateType } from "./enums";
 
 export interface tableDefinition {
     name: string;
@@ -18,5 +10,6 @@ export interface columnDefinition {
     name: string;
     type: ColumnType;
     isQueriable: boolean;
+    updateType: ColumnUpdateType;
     isForOutput: boolean;
 }

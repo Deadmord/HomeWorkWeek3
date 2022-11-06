@@ -2,9 +2,9 @@ export class SqlParameters {
     public static Id: string = "id";
 }
 
-export const DB_CONNECTION_STRING: string = "server=.;Database=X5RetailGroup;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
+//export const DB_CONNECTION_STRING: string = "server=.;Database=X5RetailGroup;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
+//export const TOKEN_SECRET: string = "d509c3f7-7538-4c8f-9153-3d7c4c1760ed"; //Online GUID generator
 export const NON_EXISTENT_ID: number = -1;
-export const TOKEN_SECRET: string = "d509c3f7-7538-4c8f-9153-3d7c4c1760ed"; //Online GUID generator
 export class Queries {
     public static Store: string = "SELECT * FROM store WHERE status_id = ?";
     public static StoreById: string = "SELECT * FROM store WHERE id = ? AND status_id = ?";

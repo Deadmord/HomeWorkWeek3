@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { authenticationToken, jwtUserData, systemError } from "../../entities";
 import { ResponseHelper } from "../../framework/response.helper";
 import AuthenticationService from "./authentication.service";
-import { TOKEN_SECRET } from "../../constants";
+import { StaticEnvironment } from "../environment.static";
 
 interface localUser {
     login: string;
@@ -27,7 +27,7 @@ class AuthenticationController {
                 
             const token: string = jwt.sign(
                 authenticationToken,
-                TOKEN_SECRET,
+                StaticEnvironment.tokenSecret,
                 {
                     expiresIn: "3h",
                 });

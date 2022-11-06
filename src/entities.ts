@@ -1,8 +1,16 @@
-import { AppError, Role } from "./enums";
+import { AppError, Role, Status } from "./enums";
 import { Request } from 'express';
 
 export interface entityWithId {
     id: number;
+}
+
+export interface entityBase extends entityWithId {
+    createDate?: string;
+    updateDate?: string;
+    createUser?: user;
+    updateUser?: user;
+    statusId?: Status;
 }
 export interface store extends entityWithId {
     store_title: string;
@@ -58,4 +66,14 @@ export interface userRelation extends user {
     relation_create_user_id?: number;
     relation_update_user_id?: number;
     relation_status?: string;
+}
+export interface status extends entityWithId {
+    statusName: string;
+}
+
+export interface environment {
+    dbConnectionString: string;
+    tokenSecret: string;
+    logsFolder: string;
+    serverPort: number;
 }

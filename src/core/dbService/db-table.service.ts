@@ -1,12 +1,14 @@
 import { map, filter } from "underscore";
 import { columnDefinition, tableDefinition } from "../../db-entities";
-import { Status } from "../../enums";
+import { systemError } from "../../entities";
+import { ColumnUpdateType, Status } from "../../enums";
 import { SqlHelper } from "../sql.helper";
 
 interface IDbTable<T> {
     instanceGenericType: T;
 
     getById<T>(id: number): Promise<T>;
+    updateById<T>(id: number, original: T, userId: number): Promise<void>;
 }
 
 export class DbTable<T> implements IDbTable<T> {
@@ -41,5 +43,37 @@ export class DbTable<T> implements IDbTable<T> {
         });
 
         return result;
+    }
+    
+    public async updateById<T>(id: number, original: T, userId: number): Promise<void> {
+        const updatableFields: columnDefinition[] = filter(this._table.fields, (column: columnDefinition) => column.updateType === ColumnUpdateType.Always);
+        const currentDateFields: columnDefinition[] = filter(this._table.fields, (column: columnDefinition) => column.updateType === ColumnUpdateType.CurrentDate);
+        const currentUserFields: columnDefinition[] = filter(this._table.fields, (column: columnDefinition) => column.updateType === ColumnUpdateType.CurrentUser);
+        
+        const currentDateFieldsClause: string = map(currentDateFields, (column: columnDefinition) => `${column.dbName} = ?`).join(", ");
+        const currentUserFieldsClause: string = map(currentUserFields, (column: columnDefinition) => `${column.dbName} = ?`).join(", ");
+        const sql: string = `UPDATE ${this._table.name} SET ${map(updatableFields, (column: columnDefinition) => `${column.dbName} = ?`).join(", ")} ${currentDateFieldsClause ? ", " + currentDateFieldsClause : ""} ${currentUserFieldsClause ? ", " + currentUserFieldsClause : ""} WHERE id = ?`;
+
+        const params: any[] = [];
+        updatableFields.forEach((column: columnDefinition) => {
+            params.push((original as any)[column.name]);
+        });
+
+        currentDateFields.forEach(() => {
+            params.push(new Date());
+        });
+
+        currentUserFields.forEach(() => {
+            params.push(userId);
+        });
+
+        params.push(id);
+
+        try {
+            await SqlHelper.executeQueryNoResult(sql, false, ...params);
+        }
+        catch (error: any) {
+            throw (error as systemError);
+        }
     }
 }

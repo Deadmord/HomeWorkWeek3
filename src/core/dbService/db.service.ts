@@ -1,6 +1,7 @@
 import * as _ from "underscore";
-import { columnDefinition, ColumnType, tableDefinition, TableNames } from "../../db-entities";
+import { columnDefinition, tableDefinition } from "../../db-entities";
 import { user } from "../../entities";
+import { ColumnType, TableNames, ColumnUpdateType  } from "../../enums";
 import { DbTable } from "./db-table.service";
 
 interface localTable<T> {
@@ -18,18 +19,62 @@ class DbService implements IDbService {
 
     constructor() {
         this._tables[TableNames.User] = this.addTableToContext<user>(TableNames.User, [{
-            dbName: "id",
-            name: "id",
-            type: ColumnType.Integer,
-            isForOutput: true,
-            isQueriable: true
-        }, {
-            dbName: "first_name",
-            name: "firstName",
-            type: ColumnType.Varchar,
-            isForOutput: true,
-            isQueriable: true
-        }]);
+                dbName: "id",
+                name: "id",
+                type: ColumnType.Integer,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "first_name",
+                name: "firstName",
+                type: ColumnType.Varchar,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.CurrentDate
+            }, {
+                dbName: "last_name",
+                name: "lastName",
+                type: ColumnType.Varchar,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.Always
+            }, {
+                dbName: "create_date",
+                name: "createDate",
+                type: ColumnType.Date,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "update_date",
+                name: "updateDate",
+                type: ColumnType.Date,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.CurrentDate
+            }, {
+                dbName: "create_user_id",
+                name: "createUser",
+                type: ColumnType.Integer,
+                isForOutput: false,
+                isQueriable: false,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "update_user_id",
+                name: "updateUser",
+                type: ColumnType.Integer,
+                isForOutput: false,
+                isQueriable: false,
+                updateType: ColumnUpdateType.CurrentUser
+            }, {
+                dbName: "status_id",
+                name: "statusId",
+                type: ColumnType.Integer,
+                isForOutput: false,
+                isQueriable: false,
+                updateType: ColumnUpdateType.None
+            }]);
     }
 
     public get tables(): _.Dictionary<tableDefinition> {
@@ -40,6 +85,12 @@ class DbService implements IDbService {
         const dbTableObject: localTable<any> = this._tables[tableName] as localTable<any>;
 
         return await dbTableObject.instance.getById(id);
+    }
+
+    public async updateTableById<T>(tableName: TableNames, id: number, original: T, userId: number): Promise<void> {
+        const dbTableObject: localTable<any> = this._tables[tableName] as localTable<any>;
+
+        await dbTableObject.instance.updateById(id, original, userId);
     }
 
     private addTableToContext<T>(tableName: TableNames, fields: columnDefinition[]): localTable<T> {
