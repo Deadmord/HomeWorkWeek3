@@ -1,9 +1,10 @@
 import * as _ from "underscore";
-import { entityWithId, product, store, systemError } from "../../entities";
-import { Status } from "../../enums";
+import { entityWithId, product, status, store, systemError } from "../../entities";
+import { Status, TableNames } from "../../enums";
 import { Queries, StoredProcedures } from "../../constants";
 import { DateHelper } from "../../framework/date.helper";
 import { SqlHelper } from "../../core/sql.helper";
+import DbService from "../../core/dbService/db.service";
 
 interface localStore {
     id: number;
@@ -43,10 +44,38 @@ interface IRetailProductService {
     getProduct(id: number): Promise<product>;
 }
 
+interface IStatusService {
+    getStatusById(id: number): Promise<status>;
+}
+
 class RetailStoreService implements IRetailStoreService {
+    private _serviceTable: TableNames = TableNames.Store;
 
     constructor() { }
 
+    //================== Generic way ===================
+
+    public async getStoreById(id: number): Promise<store> {
+        try {
+            return await DbService.getFromTableById(this._serviceTable, id);
+        }
+        catch (error: any) {
+            throw (error as systemError);
+        }
+    }
+
+    public async updateStoreById(store: store, userId: number): Promise<store> {
+        try {
+            await DbService.updateTableById(this._serviceTable, store.id, store, userId);
+            return store;
+        }
+        catch (error: any) {
+            throw (error as systemError);
+        }
+    }
+
+
+    //================== Regular way =================== for use delite "_Reg_"
     public getStores(): Promise<store[]> {
         return new Promise<store[]>((resolve , reject) => {
             const result: store[] = [];
@@ -65,7 +94,7 @@ class RetailStoreService implements IRetailStoreService {
         });
     }
 
-    public getStoreById(id: number): Promise<store> {
+    public getStoreById_Reg_(id: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
             SqlHelper.executeQuerySingleResult<localStore>(Queries.StoreById, id, Status.Active)
                 .then((queryResult: localStore) => {
@@ -77,10 +106,10 @@ class RetailStoreService implements IRetailStoreService {
         });
     }
 
-    public updateStoreById(store: store, userId: number): Promise<store> {
+    public updateStoreById_Reg_(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
             const updateDate: Date = new Date();
-            SqlHelper.executeQueryNoResult(Queries.UpdateStoreById, false, store.store_title, store.store_address, store.manager_id,  DateHelper.dateToString(updateDate), userId, store.id, Status.Active)
+            SqlHelper.executeQueryNoResult(Queries.UpdateStoreById, false, store.store_title, store.store_address, store.managerId,  DateHelper.dateToString(updateDate), userId, store.id, Status.Active)
                 .then(() => {
                     resolve(store);
                 })
@@ -93,7 +122,7 @@ class RetailStoreService implements IRetailStoreService {
     public addStore(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
             const createDate: string = DateHelper.dateToString(new Date());
-            SqlHelper.createNew(Queries.AddStore, store, store.store_title, store.store_address, store.manager_id, createDate, createDate, userId, userId, Status.Active)
+            SqlHelper.createNew(Queries.AddStore, store, store.store_title, store.store_address, store.managerId, createDate, createDate, userId, userId, Status.Active)
                 .then((result: entityWithId) => {
                     resolve(result as store);
                 })
@@ -105,7 +134,7 @@ class RetailStoreService implements IRetailStoreService {
 
     public addStoreByStoredProcedure(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
-            SqlHelper.executeStoredProcedure(StoredProcedures.AddStore, store, store.store_title, store.store_address, store.manager_id, userId)
+            SqlHelper.executeStoredProcedure(StoredProcedures.AddStore, store, store.store_title, store.store_address, store.managerId, userId)
                 .then(() => {
                     resolve(store);
                 })
@@ -117,7 +146,7 @@ class RetailStoreService implements IRetailStoreService {
 
     public addStoreByStoredProcedureOutput(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
-            SqlHelper.executeStoredProcedureWithOutput(StoredProcedures.AddStore, store, store.store_title, store.store_address, store.manager_id, userId)
+            SqlHelper.executeStoredProcedureWithOutput(StoredProcedures.AddStore, store, store.store_title, store.store_address, store.managerId, userId)
                 .then(() => {
                     resolve(store);
                 })
@@ -157,7 +186,7 @@ class RetailStoreService implements IRetailStoreService {
             id: local.id,
             store_title: local.title,
             store_address: local.address,
-            manager_id: local.manager_id
+            managerId: local.manager_id
         };
     }
 }
@@ -207,8 +236,15 @@ class RetailProductService implements IRetailProductService {
     }
 }
 
+class StatusService implements IStatusService {
+    public async getStatusById(id: number): Promise<status> {
+        return await DbService.getFromTableById(TableNames.Status, id);
+    }
+}
+
 export const RetailStoreServiceInst: IRetailStoreService = new RetailStoreService();
 export const RetailProductServiceInst: IRetailProductService = new RetailProductService();
+export const StatusServiceInst: IStatusService = new StatusService();
 
 
         // sql.open(connectionString, (err: Error, connection: Connection) => {

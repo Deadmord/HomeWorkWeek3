@@ -1,6 +1,6 @@
 import * as _ from "underscore";
 import { columnDefinition, tableDefinition } from "../../db-entities";
-import { user } from "../../entities";
+import { status, store, user } from "../../entities";
 import { ColumnType, TableNames, ColumnUpdateType  } from "../../enums";
 import { DbTable } from "./db-table.service";
 
@@ -11,6 +11,7 @@ interface localTable<T> {
 
 interface IDbService {
     getFromTableById(tableName: TableNames, id: number): Promise<any>;
+    updateTableById<T>(tableName: TableNames, id: number, original: T, userId: number): Promise<void>;
 }
 
 class DbService implements IDbService {
@@ -31,7 +32,7 @@ class DbService implements IDbService {
                 type: ColumnType.Varchar,
                 isForOutput: true,
                 isQueriable: true,
-                updateType: ColumnUpdateType.CurrentDate
+                updateType: ColumnUpdateType.Always
             }, {
                 dbName: "last_name",
                 name: "lastName",
@@ -74,6 +75,87 @@ class DbService implements IDbService {
                 isForOutput: false,
                 isQueriable: false,
                 updateType: ColumnUpdateType.None
+            }]);
+
+            this._tables[TableNames.Store] = this.addTableToContext<store>(TableNames.Store, [{
+                dbName: "id",
+                name: "id",
+                type: ColumnType.Integer,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "title",
+                name: "store_title",
+                type: ColumnType.Varchar,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.Always
+            }, {
+                dbName: "address",
+                name: "store_address",
+                type: ColumnType.Varchar,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.Always
+            }, {
+                dbName: "manager_id",
+                name: "managerId",
+                type: ColumnType.Integer,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.Always
+            }, {
+                dbName: "create_date",
+                name: "createDate",
+                type: ColumnType.Date,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "update_date",
+                name: "updateDate",
+                type: ColumnType.Date,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.CurrentDate
+            }, {
+                dbName: "create_user_id",
+                name: "createUser",
+                type: ColumnType.Integer,
+                isForOutput: false,
+                isQueriable: false,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "update_user_id",
+                name: "updateUser",
+                type: ColumnType.Integer,
+                isForOutput: false,
+                isQueriable: false,
+                updateType: ColumnUpdateType.CurrentUser
+            }, {
+                dbName: "status_id",
+                name: "statusId",
+                type: ColumnType.Integer,
+                isForOutput: false,
+                isQueriable: false,
+                updateType: ColumnUpdateType.None
+            }]);
+
+            this._tables[TableNames.Status] = this.addTableToContext<status>(TableNames.Status, [{
+                dbName: "id",
+                name: "id",
+                type: ColumnType.Integer,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.None
+            }, {
+                dbName: "title",
+                name: "status_title",
+                type: ColumnType.Varchar,
+                isForOutput: true,
+                isQueriable: true,
+                updateType: ColumnUpdateType.Always
             }]);
     }
 

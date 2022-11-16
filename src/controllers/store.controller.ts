@@ -54,7 +54,7 @@ const updateStoreById = async (req: Request, res: Response, next: NextFunction) 
                 id: numericParamOrError,
                 store_title: body.store_title,
                 store_address: body.store_address,
-                manager_id: body.manager_id
+                managerId: body.managerId
             }, (req as AuthenticatedRequest).userData.userId)
                 .then((result: store) => {
                     return res.status(200).json(result);
@@ -79,7 +79,7 @@ const addStore = async (req: Request, res: Response, next: NextFunction) => {
         id: NON_EXISTENT_ID,
         store_title: body.store_title,
         store_address: body.store_address,
-        manager_id: body.manager_id
+        managerId: body.managerId
     }, (req as AuthenticatedRequest).userData.userId)
         .then((result: store) => {
             return res.status(200).json(result);
@@ -95,7 +95,7 @@ const addStoreByStoredProcedure = async (req: Request, res: Response, next: Next
         id: NON_EXISTENT_ID,
         store_title: body.store_title,
         store_address: body.store_address,
-        manager_id: body.manager_id
+        managerId: body.managerId
     }, (req as AuthenticatedRequest).userData.userId)
         .then((result: store) => {
             return res.status(200).json(result);
@@ -112,7 +112,7 @@ const addStoreByStoredProcedureOutput = async (req: Request, res: Response, next
         id: NON_EXISTENT_ID,
         store_title: body.store_title,
         store_address: body.store_address,
-        manager_id: body.manager_id
+        managerId: body.managerId
     }, (req as AuthenticatedRequest).userData.userId)
         .then((result: store) => {
             return res.status(200).json(result);

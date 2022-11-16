@@ -5,6 +5,7 @@ export enum Status {
 
 export enum Role {
     Administrator = 3,
+    Manager = 4,
     RegularUser = 5
 }
 

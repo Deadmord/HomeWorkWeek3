@@ -1,7 +1,8 @@
 import { map, filter } from "underscore";
 import { columnDefinition, tableDefinition } from "../../db-entities";
 import { systemError } from "../../entities";
-import { ColumnUpdateType, Status } from "../../enums";
+import { ColumnType, ColumnUpdateType, Status } from "../../enums";
+import { DateHelper } from "../../framework/date.helper";
 import { SqlHelper } from "../sql.helper";
 
 interface IDbTable<T> {
@@ -36,8 +37,8 @@ export class DbTable<T> implements IDbTable<T> {
 
         // [0] = {first_name = "Demo", id = 2} => {firstName = "Demo", id = 2}
         this._table.fields.forEach((column: columnDefinition) => {
+            (result as any)[column.name] = column.type === ColumnType.Date ? (DateHelper.dateToString((result as any)[column.dbName])) : (result as any)[column.dbName];
             if (column.name !== column.dbName) {
-                (result as any)[column.name] = (result as any)[column.dbName];
                 delete (result as any)[column.dbName];
             }
         });
@@ -60,7 +61,8 @@ export class DbTable<T> implements IDbTable<T> {
         });
 
         currentDateFields.forEach(() => {
-            params.push(new Date());
+            //params.push(DateHelper.dateToString(new Date())); //In such a way we got a error, 
+            params.push(new Date()); //not nesessary obligation
         });
 
         currentUserFields.forEach(() => {

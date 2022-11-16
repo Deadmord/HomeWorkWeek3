@@ -12,14 +12,18 @@ export interface entityBase extends entityWithId {
     updateUser?: user;
     statusId?: Status;
 }
-export interface store extends entityWithId {
+export interface store extends entityBase {
     store_title: string;
     store_address: string;
-    manager_id: number;
+    managerId: number;
+    create_user_id?: number; // backward compatibility
+    update_user_id?: number; // backward compatibility
 }
-export interface product extends entityWithId{
+export interface product extends entityBase{
     product_title: string;
     product_categories: string;
+    create_user_id?: number; // backward compatibility
+    update_user_id?: number; // backward compatibility
 }
 
 export interface systemError {

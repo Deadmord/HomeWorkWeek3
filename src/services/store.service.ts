@@ -89,7 +89,7 @@ export class RetailStoreService implements IRetailStoreService {
     public updateStoreById(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
             const updateDate: Date = new Date();
-            SqlHelper.executeQueryNoResult(this._errorService, Queries.UpdateStoreById, false, store.store_title, store.store_address, store.manager_id,  DateHelper.dateToString(updateDate), userId, store.id, Status.Active)
+            SqlHelper.executeQueryNoResult(this._errorService, Queries.UpdateStoreById, false, store.store_title, store.store_address, store.managerId,  DateHelper.dateToString(updateDate), userId, store.id, Status.Active)
                 .then(() => {
                     resolve(store);
                 })
@@ -102,7 +102,7 @@ export class RetailStoreService implements IRetailStoreService {
     public addStore(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
             const createDate: string = DateHelper.dateToString(new Date());
-            SqlHelper.createNew(this._errorService, Queries.AddStore, store, store.store_title, store.store_address, store.manager_id, createDate, createDate, userId, userId, Status.Active)
+            SqlHelper.createNew(this._errorService, Queries.AddStore, store, store.store_title, store.store_address, store.managerId, createDate, createDate, userId, userId, Status.Active)
                 .then((result: entityWithId) => {
                     resolve(result as store);
                 })
@@ -114,7 +114,7 @@ export class RetailStoreService implements IRetailStoreService {
 
     public addStoreByStoredProcedure(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
-            SqlHelper.executeStoredProcedure(this._errorService, StoredProcedures.AddStore, store, store.store_title, store.store_address, store.manager_id, userId)
+            SqlHelper.executeStoredProcedure(this._errorService, StoredProcedures.AddStore, store, store.store_title, store.store_address, store.managerId, userId)
                 .then(() => {
                     resolve(store);
                 })
@@ -126,7 +126,7 @@ export class RetailStoreService implements IRetailStoreService {
 
     public addStoreByStoredProcedureOutput(store: store, userId: number): Promise<store> {
         return new Promise<store>((resolve, reject) => {
-            SqlHelper.executeStoredProcedureWithOutput(this._errorService, StoredProcedures.AddStore, store, store.store_title, store.store_address, store.manager_id, userId)
+            SqlHelper.executeStoredProcedureWithOutput(this._errorService, StoredProcedures.AddStore, store, store.store_title, store.store_address, store.managerId, userId)
                 .then(() => {
                     resolve(store);
                 })
@@ -166,7 +166,7 @@ export class RetailStoreService implements IRetailStoreService {
             id: local.id,
             store_title: local.title,
             store_address: local.address,
-            manager_id: local.manager_id
+            managerId: local.manager_id
         };
     }
 }

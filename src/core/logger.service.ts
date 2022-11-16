@@ -32,7 +32,7 @@ class LoggerService implements ILoggerService {
                 },
                 logLevelConsole: {
                     type: "logLevelFilter",
-                    level: "info",
+                    level: "debug",
                     appender: "console"
                 },
                 logLevelFile: {

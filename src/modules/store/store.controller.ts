@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { AuthenticatedRequest, product, store, systemError } from "../../entities";
+import { AuthenticatedRequest, product, store, status, systemError } from "../../entities";
 import { RequestHelper } from "../../core/request.helper";
 import { ResponseHelper } from "../../framework/response.helper";
-import { RetailStoreServiceInst as RetailStoreService, RetailProductServiceInst as RetailProductService } from "./store.service";
+import { RetailStoreServiceInst as RetailStoreService, 
+        RetailProductServiceInst as RetailProductService, 
+        StatusServiceInst as StatusService } from "./store.service";
 import { NON_EXISTENT_ID } from "../../constants";
 
 class StoreController {
@@ -66,7 +68,7 @@ class StoreController {
                     id: numericParamOrError,
                     store_title: body.store_title,
                     store_address: body.store_address,
-                    manager_id: body.manager_id
+                    managerId: body.managerId
                 }, (req as AuthenticatedRequest).userData.userId)
                     .then((result: store) => {
                         return res.status(200).json(result);
@@ -91,7 +93,7 @@ class StoreController {
             id: NON_EXISTENT_ID,
             store_title: body.store_title,
             store_address: body.store_address,
-            manager_id: body.manager_id
+            managerId: body.managerId
         }, (req as AuthenticatedRequest).userData.userId)
             .then((result: store) => {
                 return res.status(200).json(result);
@@ -108,7 +110,7 @@ class StoreController {
             id: NON_EXISTENT_ID,
             store_title: body.store_title,
             store_address: body.store_address,
-            manager_id: body.manager_id
+            managerId: body.managerId
         }, (req as AuthenticatedRequest).userData.userId)
             .then((result: store) => {
                 return res.status(200).json(result);
@@ -125,7 +127,7 @@ class StoreController {
             id: NON_EXISTENT_ID,
             store_title: body.store_title,
             store_address: body.store_address,
-            manager_id: body.manager_id
+            managerId: body.managerId
         }, (req as AuthenticatedRequest).userData.userId)
             .then((result: store) => {
                 return res.status(200).json(result);
@@ -192,6 +194,28 @@ class StoreController {
         }
     };
 
+    //-------------Status-------------
+    async getStatusById(req: Request, res: Response, next: NextFunction) {
+        const numericParamOrError: number | systemError = RequestHelper.ParseNumericInput(req.params.id)
+
+        if (typeof numericParamOrError === "number") {
+            if (numericParamOrError > 0) {
+                StatusService.getStatusById(numericParamOrError)
+                    .then((result: status) => {
+                        return res.status(200).json(result);
+                    })
+                    .catch((error: systemError) => {
+                        return ResponseHelper.handleError(res, error);
+                    });
+            }
+            else {
+                // TODO: Error handling
+            }
+        }
+        else {
+            return ResponseHelper.handleError(res, numericParamOrError);
+        }
+    }
 }
 
 

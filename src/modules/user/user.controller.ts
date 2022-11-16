@@ -5,6 +5,7 @@ import { AuthenticatedRequest, systemError, user, userRelation } from "../../ent
 import { ResponseHelper } from "../../framework/response.helper";
 import UserService from "./user.service";
 import { NON_EXISTENT_ID } from "../../constants";
+import LoggerService from "../../core/logger.service";
 
 class UserController {
 
@@ -24,19 +25,24 @@ class UserController {
     });
   }
   async getById(req: Request, res: Response, next: NextFunction) {
+    LoggerService.debug("getUserById method start");
     const numericParamOrError: number | systemError = RequestHelper.ParseNumericInput(req.params.id)
     if (typeof numericParamOrError === "number") {
         if (numericParamOrError > 0) {
+            LoggerService.debug("getUserById successful return");
             const result: user = await UserService.getById(numericParamOrError);
             return res.status(200).json(result);
         }
         else {
             // TODO: Error handling
+            LoggerService.debug("getUserById unhandled error");
         }
     }
     else {
+        LoggerService.debug("getUserById failure response");
         return ResponseHelper.handleError(res, numericParamOrError);
     }
+    LoggerService.debug("getUserById method end");
   }
 
   async add(req: Request, res: Response, next: NextFunction) {
